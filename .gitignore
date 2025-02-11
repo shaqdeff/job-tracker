@@ -44,3 +44,5 @@ Thumbs.db
 test-output
 .env*
 
+backend/src/test-password.js
+
