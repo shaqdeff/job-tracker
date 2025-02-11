@@ -2,6 +2,7 @@ import express from 'express';
 import { body } from 'express-validator';
 import User from '../models/user.model';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth';
+import authMiddleWare from '../middleware/auth.middleware';
 
 const router = express.Router();
 
@@ -96,6 +97,20 @@ router.post('/login', async (req: any, res: any) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('auth_token');
   res.json({ message: 'Logged out successfully' });
+});
+
+router.get('/profile', authMiddleWare, async (req: any, res: any) => {
+  try {
+    const user = await User.findById(req.user).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 export default router;
