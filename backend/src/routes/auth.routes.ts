@@ -5,7 +5,7 @@ import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 
 const router = express.Router();
 
-// Register/Sign up
+// register/sign up
 router.post(
   '/register',
   [
@@ -23,19 +23,19 @@ router.post(
     try {
       const { firstName, lastName, email, phone, password } = req.body;
 
-      // Trim the password
+      // trim the password
       const trimmedPassword = password.trim();
 
-      // Check if user already exists
+      // check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({ message: 'Email already exists' });
       }
 
-      // Hash password
+      // hash password
       const hashedPassword = await hashPassword(trimmedPassword);
 
-      // Create user
+      // create user
       const newUser = new User({
         firstName,
         lastName,
@@ -53,35 +53,49 @@ router.post(
   }
 );
 
-// Login
+// login/sign in
 router.post('/login', async (req: any, res: any) => {
   try {
     const { email, password } = req.body;
 
-    // Trim the password
+    // trim the password
     const trimmedPassword = password.trim();
 
-    // Find the user by email
+    // find the user by email
     const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(401).json({ message: 'Email not registered' });
     }
 
-    // Compare password
+    // compare passwords
     const isMatch = await comparePassword(trimmedPassword, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Incorrect password' });
     }
 
-    // Generate JWT token
+    // generate JWT token
     const token = generateToken(user.id);
 
-    res.json({ token, user });
+    // store token in HTTP-only cookie
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 604800000, // 7 days
+    });
+
+    res.json({ message: 'Login successful', user });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
+});
+
+// logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({ message: 'Logged out successfully' });
 });
 
 export default router;
