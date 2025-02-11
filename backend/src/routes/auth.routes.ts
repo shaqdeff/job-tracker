@@ -5,7 +5,7 @@ import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 
 const router = express.Router();
 
-// register/sign up
+// Register/Sign up
 router.post(
   '/register',
   [
@@ -23,15 +23,19 @@ router.post(
     try {
       const { firstName, lastName, email, phone, password } = req.body;
 
-      // check if user already exists
-      if (await User.findOne({ email })) {
+      // Trim the password
+      const trimmedPassword = password.trim();
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
         return res.status(400).json({ message: 'Email already exists' });
       }
 
-      // hash password
-      const hashedPassword = await hashPassword(password);
+      // Hash password
+      const hashedPassword = await hashPassword(trimmedPassword);
 
-      // create user
+      // Create user
       const newUser = new User({
         firstName,
         lastName,
@@ -49,19 +53,33 @@ router.post(
   }
 );
 
-// login
+// Login
 router.post('/login', async (req: any, res: any) => {
   try {
     const { email, password } = req.body;
+
+    // Trim the password
+    const trimmedPassword = password.trim();
+
+    // Find the user by email
     const user = await User.findOne({ email });
 
-    if (!user || !(await comparePassword(password, user.password))) {
-      return res.status(401).json({ message: 'Wrong password' });
+    if (!user) {
+      return res.status(401).json({ message: 'Email not registered' });
     }
 
+    // Compare password
+    const isMatch = await comparePassword(trimmedPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect password' });
+    }
+
+    // Generate JWT token
     const token = generateToken(user.id);
+
     res.json({ token, user });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
