@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -20,6 +21,9 @@ mongoose
   .connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected successfully!'))
   .catch((error) => console.error('❌ MongoDB connection failed:', error));
+
+// Routes
+app.use('/auth', authRoutes);
 
 app.get('/', (req, res) => {
   res.send({ message: 'Server is running 🚀' });
