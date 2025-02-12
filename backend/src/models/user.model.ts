@@ -15,10 +15,15 @@ const UserSchema: Schema = new Schema(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    phone: { type: String, required: true },
-    password: { type: String, required: true },
+    googleId: { type: String, unique: true, sparse: true },
+    password: {
+      type: String,
+      required: function (this: IUser) {
+        return !this.googleId;
+      },
+    },
+    phone: { type: String, required: false },
     isVerified: { type: Boolean, default: false },
-    googleId: { type: String, required: false },
   },
   {
     timestamps: true,

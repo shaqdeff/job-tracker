@@ -11,7 +11,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      callbackURL: 'http://localhost:5000/auth/google/callback',
+      callbackURL: '/auth/google/callback',
+      scope: ['profile', 'email'],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -42,7 +43,10 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
-    done(null, user);
+    if (!user) {
+      return done(null, false);
+    }
+    done(null, user ?? null);
   } catch (error) {
     done(error, null);
   }

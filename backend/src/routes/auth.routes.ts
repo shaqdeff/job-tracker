@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 import passport from 'passport';
-import cookie from 'cookie';
 import User from '../models/user.model';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 import authMiddleWare from '../middleware/auth.middleware';
@@ -107,18 +106,15 @@ router.get(
   (req: any, res) => {
     const token = generateToken(req.user.id);
 
-    res.setHeader(
-      'Set-Cookie',
-      cookie.serialize('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60,
-        path: '/',
-      })
-    );
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 604800000, // 7 days
+      path: '/',
+    });
 
-    res.redirect(process.env.FRONTEND_URL || '/'); // Redirect to frontend/dashboard
+    res.redirect('/');
   }
 );
 
