@@ -1,5 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
+import passport from 'passport';
+import cookie from 'cookie';
 import User from '../models/user.model';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 import authMiddleWare from '../middleware/auth.middleware';
@@ -93,24 +95,50 @@ router.post('/login', async (req: any, res: any) => {
   }
 });
 
+// google auth
+router.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req: any, res) => {
+    const token = generateToken(req.user.id);
+
+    res.setHeader(
+      'Set-Cookie',
+      cookie.serialize('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/',
+      })
+    );
+
+    res.redirect(process.env.FRONTEND_URL || '/'); // Redirect to frontend/dashboard
+  }
+);
+
 // logout
 router.post('/logout', (req, res) => {
   res.clearCookie('auth_token');
   res.json({ message: 'Logged out successfully' });
 });
 
-router.get('/profile', authMiddleWare, async (req: any, res: any) => {
+router.get('/profile', authMiddleWare, async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.user).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ user });
+    return res.json({ user });
   } catch (error) {
     console.error('Profile fetch error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 export default router;
