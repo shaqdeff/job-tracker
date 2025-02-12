@@ -1,10 +1,13 @@
 import express from 'express';
+import session from 'express-session';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import passport from 'passport';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
+import './utils/google.auth';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -18,6 +21,16 @@ const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(
+  session({
+    secret: process.env.JWT_SECRET ?? '',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // connect to MongoDB
 mongoose

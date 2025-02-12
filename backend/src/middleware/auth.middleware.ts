@@ -11,11 +11,7 @@ export interface AuthRequest extends Request {
   user?: string;
 }
 
-const authMiddleWare = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+const authMiddleWare = (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies.auth_token;
   if (!token) {
     return res.status(401).json({ message: 'Not authorized' });
